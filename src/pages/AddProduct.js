@@ -26,8 +26,11 @@ function AddProduct() {
       const imageData = new FormData();
       imageData.append('image', form.image);
 
-      // ✅ LIVE backend URL
-      const uploadRes = await axios.post('https://product-site-backend.onrender.com/api/products/upload-image', imageData);
+      const uploadRes = await axios.post(
+        'https://product-site-backend.onrender.com/api/products/upload-image',
+        imageData
+      );
+
       const imageUrl = uploadRes.data.imageUrl;
 
       const productData = {
@@ -37,7 +40,10 @@ function AddProduct() {
         imageUrl
       };
 
-      await axios.post('https://product-site-backend.onrender.com/api/products', productData);
+      await axios.post(
+        'https://product-site-backend.onrender.com/api/products',
+        productData
+      );
 
       alert('✅ Product added!');
       setForm({ name: '', description: '', price: '', image: null });
@@ -77,7 +83,10 @@ function AddProduct() {
           onChange={handleImageChange}
           className="border p-2 w-full"
         />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+        <button
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
           Add Product
         </button>
       </form>
