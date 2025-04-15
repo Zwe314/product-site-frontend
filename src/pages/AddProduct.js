@@ -1,73 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { isAdmin } from '../utils/auth'; // ✅ make sure to import this
 
 function AddProduct() {
   const navigate = useNavigate();
+
   const [form, setForm] = useState({
     name: '',
     description: '',
     price: '',
-    image: null
+    sizes: '',
+    images: [],
   });
 
-  // ✅ Redirect if not admin
-  useEffect(() => {
-    if (!isAdmin()) {
-      alert('❌ You must be an admin to access this page.');
-      navigate('/login');
-    }
-  }, []);
+  const [preview, setPreview] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e) => {
-    setForm(prev => ({ ...prev, image: e.target.files[0] }));
+  const handleImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setForm((prev) => ({ ...prev, images: files }));
+    setPreview(files.map(file => URL.createObjectURL(file)));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const imageData = new FormData();
-      imageData.append('image', form.image);
+    setLoading(true);
 
-      const uploadRes = await axios.post('https://product-site-backend.onrender.com/api/products/upload-image', imageData);
-      const imageUrl = uploadRes.data.imageUrl;
+    try {
+      const uploadedUrls = [];
+
+      for (const img of form.images) {
+        const imageData = new FormData();
+        imageData.append('image', img);
+        const res = await axios.post('https://product-site-backend.onrender.com/api/products/upload-image', imageData);
+        uploadedUrls.push(res.data.imageUrl);
+      }
 
       const productData = {
         name: form.name,
         description: form.description,
         price: form.price,
-        imageUrl
+        sizes: form.sizes.split(',').map(s => s.trim()),
+        imageUrls: uploadedUrls
       };
 
       await axios.post('https://product-site-backend.onrender.com/api/products', productData);
       alert('✅ Product added!');
-      setForm({ name: '', description: '', price: '', image: null });
+      navigate('/');
     } catch (err) {
       console.error(err);
       alert('❌ Something went wrong!');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="container mt-5">
-      <h2 className="mb-4">Add Product</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input name="name" placeholder="Product Name" value={form.name} onChange={handleChange} className="form-control mb-3" />
-        <input name="description" placeholder="Description" value={form.description} onChange={handleChange} className="form-control mb-3" />
-        <input name="price" placeholder="Price" value={form.price} onChange={handleChange} className="form-control mb-3" />
-        <input type="file" onChange={handleImageChange} className="form-control mb-3" />
-        <button type="submit" className="btn btn-primary">Add Product</button>
+      <h2>Add Product</h2>
+      <form onSubmit={handleSubmit}>
+        <input name="name" value={form.name} onChange={handleChange} placeholder="Product Name" className="form-control mb-2" />
+        <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description" className="form-control mb-2" />
+        <input name="price" value={form.price} onChange={handleChange} placeholder="Price" className="form-control mb-2" />
+        <input name="sizes" value={form.sizes} onChange={handleChange} placeholder="Available sizes (comma separated)" className="form-control mb-2" />
+        <input type="file" multiple accept="image/*" onChange={handleImagesChange} className="form-control mb-3" />
+        {preview.length > 0 && (
+          <div className="mb-3">
+            {preview.map((img, idx) => (
+              <img key={idx} src={img} alt="preview" width="100" className="me-2 mb-2" />
+            ))}
+          </div>
+        )}
+        <button className="btn btn-primary" type="submit" disabled={loading}>
+          {loading ? 'Adding...' : 'Add Product'}
+        </button>
       </form>
     </div>
   );
 }
 
 export default AddProduct;
+
+
 
 

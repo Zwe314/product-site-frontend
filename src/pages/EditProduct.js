@@ -1,44 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { isAdmin } from '../utils/auth';
+import { useNavigate, useParams } from 'react-router-dom';
 
 function EditProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [form, setForm] = useState({
     name: '',
     description: '',
     price: '',
-    imageUrl: ''
+    sizes: '',
+    images: [],
   });
+  const [existingImages, setExistingImages] = useState([]);
+  const [preview, setPreview] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const [newImage, setNewImage] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  // 🔐 Block if not admin
-  useEffect(() => {
-    if (!isAdmin()) {
-      alert('❌ You must be an admin to access this page.');
-      navigate('/login');
-    }
-  }, []);
-
-  // 📦 Load existing product
   useEffect(() => {
     axios.get(`https://product-site-backend.onrender.com/api/products/${id}`)
       .then((res) => {
-        const { name, description, price, imageUrl } = res.data;
-        setForm({ name, description, price, imageUrl });
-        setLoading(false);
+        const { name, description, price, sizes, imageUrls } = res.data;
+        setForm({ name, description, price, sizes: sizes.join(', '), images: [] });
+        setExistingImages(imageUrls);
       })
-      .catch((err) => {
-        console.error('Failed to fetch product:', err);
-        setLoading(false);
-      });
+      .catch((err) => console.error(err));
   }, [id]);
 
   const handleChange = (e) => {
@@ -46,101 +31,63 @@ function EditProduct() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    setNewImage(file);
-    setPreviewImage(URL.createObjectURL(file)); // ✅ Set preview
+  const handleImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setForm((prev) => ({ ...prev, images: files }));
+    setPreview(files.map(file => URL.createObjectURL(file)));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const confirm = window.confirm('Are you sure you want to update this product?');
+    const confirm = window.confirm("Are you sure you want to update this product?");
     if (!confirm) return;
 
-    setSubmitting(true);
-
+    setLoading(true);
     try {
-      let imageUrl = form.imageUrl;
+      const uploadedUrls = [...existingImages];
 
-      if (newImage) {
+      for (const img of form.images) {
         const imageData = new FormData();
-        imageData.append('image', newImage);
-        const uploadRes = await axios.post(
-          'https://product-site-backend.onrender.com/api/products/upload-image',
-          imageData
-        );
-        imageUrl = uploadRes.data.imageUrl;
+        imageData.append('image', img);
+        const res = await axios.post('https://product-site-backend.onrender.com/api/products/upload-image', imageData);
+        uploadedUrls.push(res.data.imageUrl);
       }
 
-      const updatedData = {
-        ...form,
-        imageUrl
+      const updatedProduct = {
+        name: form.name,
+        description: form.description,
+        price: form.price,
+        sizes: form.sizes.split(',').map(s => s.trim()),
+        imageUrls: uploadedUrls
       };
 
-      await axios.put(`https://product-site-backend.onrender.com/api/products/${id}`, updatedData);
-      alert('✅ Product successfully updated!');
+      await axios.put(`https://product-site-backend.onrender.com/api/products/${id}`, updatedProduct);
+      alert('✅ Product updated!');
       navigate('/');
     } catch (err) {
       console.error(err);
-      alert('❌ Failed to update product');
+      alert('❌ Update failed.');
+    } finally {
+      setLoading(false);
     }
-
-    setSubmitting(false);
   };
-
-  if (loading) {
-    return (
-      <div className="container mt-5 text-center">
-        <div className="spinner-border text-primary" role="status" />
-        <p className="mt-3">Loading product details...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="container mt-5">
       <h2>Edit Product</h2>
-      <form onSubmit={handleSubmit} className="mt-4">
+      <form onSubmit={handleSubmit}>
+        <input name="name" value={form.name} onChange={handleChange} placeholder="Product Name" className="form-control mb-2" />
+        <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description" className="form-control mb-2" />
+        <input name="price" value={form.price} onChange={handleChange} placeholder="Price" className="form-control mb-2" />
+        <input name="sizes" value={form.sizes} onChange={handleChange} placeholder="Available sizes (comma separated)" className="form-control mb-2" />
+        <input type="file" multiple accept="image/*" onChange={handleImagesChange} className="form-control mb-3" />
         <div className="mb-3">
-          <label className="form-label">Product Name</label>
-          <input type="text" className="form-control" name="name" value={form.name} onChange={handleChange} required />
+          {preview.map((img, idx) => (
+            <img key={idx} src={img} alt="preview" width="100" className="me-2 mb-2" />
+          ))}
         </div>
-        <div className="mb-3">
-          <label className="form-label">Description</label>
-          <textarea className="form-control" name="description" value={form.description} onChange={handleChange} />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Price</label>
-          <input type="number" className="form-control" name="price" value={form.price} onChange={handleChange} required />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label">Current Image</label><br />
-          <img src={form.imageUrl} alt="Current" style={{ maxHeight: '200px' }} />
-        </div>
-
-        <div className="mb-3">
-          <label className="form-label">Upload New Image (optional)</label>
-          <input type="file" className="form-control" onChange={handleImageChange} />
-        </div>
-
-        {previewImage && (
-          <div className="mb-3">
-            <label className="form-label">Preview New Image</label><br />
-            <img src={previewImage} alt="Preview" style={{ maxHeight: '200px' }} />
-          </div>
-        )}
-
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" />
-              Updating...
-            </>
-          ) : (
-            'Update Product'
-          )}
+        <button className="btn btn-warning" type="submit" disabled={loading}>
+          {loading ? 'Updating...' : 'Update Product'}
         </button>
       </form>
     </div>
@@ -148,5 +95,6 @@ function EditProduct() {
 }
 
 export default EditProduct;
+
 
 
