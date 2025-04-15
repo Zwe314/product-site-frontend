@@ -6,7 +6,7 @@ function AdminLogin() {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+    const adminPassword = process.env.REACT_APP_ADMIN_PASSWORD;
 
     if (password === adminPassword) {
       localStorage.setItem('isAdmin', 'true');
