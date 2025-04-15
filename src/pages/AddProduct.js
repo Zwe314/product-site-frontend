@@ -51,8 +51,38 @@ function AddProduct() {
     <div>
       <h2 className="text-2xl font-bold mb-4">Add Product</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input name="name" placeholder="Product Name" value={form.name} onChange={handleChange} className="border p-2 w-full" />
-        <input name="description" placeholder="Description" value={form.description} onChange={handleChange} className="border p-2 w-full" />
-        <input name="price" placeholder="Price" value={form.price} onChange={handleChange} className="border p-2 w-full" />
-        <input type="file" onChange={handleImageChange} class
+        <input
+          name="name"
+          placeholder="Product Name"
+          value={form.name}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          name="description"
+          placeholder="Description"
+          value={form.description}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          name="price"
+          placeholder="Price"
+          value={form.price}
+          onChange={handleChange}
+          className="border p-2 w-full"
+        />
+        <input
+          type="file"
+          onChange={handleImageChange}
+          className="border p-2 w-full"
+        />
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+          Add Product
+        </button>
+      </form>
+    </div>
+  );
+}
 
+export default AddProduct;
