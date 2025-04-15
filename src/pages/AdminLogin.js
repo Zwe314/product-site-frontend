@@ -5,32 +5,37 @@ function AdminLogin() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
+  const handleLogin = () => {
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+
+    if (password === adminPassword) {
       localStorage.setItem('isAdmin', 'true');
-      navigate('/');
+      navigate('/'); // Redirect after login
     } else {
-      alert('Incorrect password');
+      alert('Incorrect password. Please try again.');
     }
   };
 
   return (
-    <div className="container mt-5" style={{ maxWidth: '400px' }}>
-      <h3 className="mb-4">Admin Log-in</h3>
-      <form onSubmit={handleSubmit}>
+    <div className="container mt-5 text-center">
+      <h2 className="mb-4">Admin Log-in</h2>
+      <div className="d-flex flex-column align-items-center">
         <input
           type="password"
-          placeholder="Enter admin password"
           className="form-control mb-3"
+          style={{ maxWidth: '300px' }}
+          placeholder="Enter admin password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit" className="btn btn-dark w-100">Login</button>
-      </form>
+        <button className="btn btn-dark" onClick={handleLogin}>
+          Login
+        </button>
+      </div>
     </div>
   );
 }
 
 export default AdminLogin;
+
 
