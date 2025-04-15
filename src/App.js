@@ -7,7 +7,7 @@ import AddProduct from './pages/AddProduct';
 import ProductDetail from './pages/ProductDetail';
 import EditProduct from './pages/EditProduct';
 import AdminLogin from './pages/AdminLogin';
-import Contact from './pages/Contact';
+import Contact from './pages/contact';
 
 function App() {
   return (
