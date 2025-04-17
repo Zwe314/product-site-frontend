@@ -1,20 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
+import './ProductDetail.css';
 
 function ProductDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [product, setProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState('');
-  const [email, setEmail] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [orderMessage, setOrderMessage] = useState('');
+  const [mainImage, setMainImage] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     axios
       .get(`https://product-site-backend.onrender.com/api/products/${id}`)
       .then((res) => {
         setProduct(res.data);
+        setMainImage(res.data.imageUrls?.[0] || '');
         setIsLoading(false);
       })
       .catch((err) => {
@@ -23,80 +31,180 @@ function ProductDetail() {
       });
   }, [id]);
 
-  const handleOrder = async () => {
-    if (!selectedSize || !email) {
-      alert('Please choose a size and enter your email.');
+  const handleOrder = () => {
+    const hasSizes = product.sizes?.some(s => s.trim() !== '');
+    const hasColors = product.colors?.some(c => c.trim() !== '');
+
+    if (hasSizes && !selectedSize) {
+      alert('Please choose a size.');
       return;
     }
-
-    try {
-      const res = await axios.post(`https://product-site-backend.onrender.com/api/products/${id}/order`, {
-        size: selectedSize,
-        email,
-      });
-      setOrderMessage(res.data.message);
-    } catch (err) {
-      alert('Failed to confirm order.');
+    if (hasColors && !selectedColor) {
+      alert('Please choose a color.');
+      return;
     }
+    setShowPopup(true);
+  };
+
+  const orderText = `🛍️ Product: ${product?.name}
+💵 Price: ${product?.price}
+🎨 Color: ${selectedColor || 'N/A'}
+📏 Size: ${selectedSize || 'N/A'}`;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(orderText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const goToMessenger = () => {
+    window.open('https://m.me/CynosureCollab', '_blank');
   };
 
   if (isLoading) return <div className="container mt-5">Loading...</div>;
   if (!product) return <div className="container mt-5">Product not found.</div>;
 
   return (
-    <div className="container mt-5">
-      <h2 className="mb-3">{product.name}</h2>
+    <div className="product-detail-page">
+      <div className="container py-4">
+        <button className="btn btn-link back-btn" onClick={() => navigate('/products')}>
+          &larr; Back
+        </button>
 
-      {/* Primary image */}
-      <img src={product.imageUrl} alt={product.name} className="img-fluid mb-3" style={{ maxHeight: '400px' }} />
+        <div className="row mt-3">
+          {/* Left: Images */}
+          <div className="col-md-6 mb-4">
+            <div className="main-image mb-3">
+              <Zoom>
+                <img
+                  src={mainImage}
+                  alt="Main"
+                  className="img-fluid shadow rounded"
+                  style={{ maxHeight: '400px', objectFit: 'cover' }}
+                />
+              </Zoom>
+            </div>
+            <div className="thumbnail-gallery">
+              {product.imageUrls?.map((url, idx) => (
+                <img
+                  key={idx}
+                  src={url}
+                  alt={`Thumb ${idx}`}
+                  className={`thumbnail-img ${mainImage === url ? 'active' : ''}`}
+                  onClick={() => setMainImage(url)}
+                />
+              ))}
+            </div>
+          </div>
 
-      {/* Additional images */}
-      <div className="d-flex gap-3 flex-wrap mb-3">
-        {product.imageUrls &&
-          product.imageUrls.map((url, index) => (
-            <img key={index} src={url} alt={`Product ${index}`} className="img-thumbnail" style={{ width: '150px' }} />
-          ))}
+          {/* Right: Details */}
+          <div className="col-md-6">
+            <div className="product-card p-4 shadow-sm">
+              <h2 className="mb-2">{product.name}</h2>
+              <h4 className="text-primary mb-3">{product.price}</h4>
+              <p>{product.description}</p>
+
+              {/* Color Selector */}
+              {product.colors?.length > 0 && product.colors.some(c => c.trim() !== '') && (
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Select Color</label>
+                  <select
+                    className="form-select"
+                    value={selectedColor}
+                    onChange={(e) => setSelectedColor(e.target.value)}
+                  >
+                    <option value="">-- Choose a color --</option>
+                    {product.colors.map((color, idx) => (
+                      <option key={idx} value={color}>{color}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Expected Delivery */}
+              {product.expectedDelivery && product.expectedDelivery.trim() !== '' && (
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Expected Delivery</label>
+                  <p>{product.expectedDelivery}</p>
+                </div>
+              )}
+
+              {/* Size Selector */}
+              {product.sizes?.length > 0 && product.sizes.some(s => s.trim() !== '') && (
+                <div className="mb-3">
+                  <label className="form-label">Select Size</label>
+                  <select
+                    className="form-select"
+                    value={selectedSize}
+                    onChange={(e) => setSelectedSize(e.target.value)}
+                  >
+                    <option value="">-- Choose a size --</option>
+                    {product.sizes.map((size, idx) => (
+                      <option key={idx} value={size}>{size}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <button className="btn btn-success w-100" onClick={handleOrder}>
+                Confirm Order
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <p>{product.description}</p>
-      <h4 className="text-primary">${product.price}</h4>
+      {/* Order Summary Modal */}
+      {showPopup && (
+        <div className="order-popup-overlay">
+          <div className="order-popup">
+            <h5>🧾 Order Summary</h5>
+            <textarea className="form-control" readOnly value={orderText} />
 
-      {/* Sizes */}
-      {product.sizes && product.sizes.length > 0 && (
-        <div className="mt-3">
-          <label className="form-label">Select Size</label>
-          <select className="form-select" value={selectedSize} onChange={(e) => setSelectedSize(e.target.value)}>
-            <option value="">-- Choose a size --</option>
-            {product.sizes.map((size, idx) => (
-              <option key={idx} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
+            <button className="btn btn-outline-primary" onClick={copyToClipboard}>
+              {copied ? '✅ Copied!' : '📋 Copy Order Summary'}
+            </button>
+
+            <small>📌 Please copy the order summary and click on continue.</small>
+            <small>
+              📩 By clicking continue, you will be redirected to Cynosure's Facebook page.
+              <br />
+              Please paste the above order message and send it to us.
+            </small>
+
+            <button className="btn btn-primary" onClick={goToMessenger}>
+              🚀 Continue
+            </button>
+
+            <button className="btn-cancel" onClick={() => setShowPopup(false)}>
+              ❌ Cancel
+            </button>
+          </div>
         </div>
       )}
-
-      {/* Email + Order Button */}
-      <div className="mt-3">
-        <label className="form-label">Your Email</label>
-        <input
-          type="email"
-          className="form-control mb-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="example@email.com"
-        />
-        <button className="btn btn-success" onClick={handleOrder}>
-          Confirm Order
-        </button>
-      </div>
-
-      {orderMessage && <div className="alert alert-info mt-3">{orderMessage}</div>}
     </div>
   );
 }
 
 export default ProductDetail;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

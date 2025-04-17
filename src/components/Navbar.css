@@ -1,0 +1,51 @@
+.custom-navbar {
+    background-color: #2d2d2d;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .brand-name {
+    color: #FFD700;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .navbar-nav .nav-link {
+    color: #f1f1f1;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-left: 20px;
+    transition: color 0.2s ease;
+  }
+  
+  .navbar-nav .nav-link:hover {
+    color: #FFD700;
+  }
+  
+  .navbar-toggler {
+    border-color: #FFD700;
+  }
+  
+  .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='%23FFD700' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+  }
+  
+  /* ✅ Logo image container styling */
+  .navbar-logo-only {
+    height: 56px;              /* Increased size */
+    width: auto;
+    border-radius: 6px;
+    padding: 3px;
+    background-color: #2d2d2d;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+    border: 2px solid #FFD700;
+    transition: transform 0.3s ease;
+  }
+  
+  .navbar-logo-only:hover {
+    transform: scale(1.05);
+  }
+  
+  
+  

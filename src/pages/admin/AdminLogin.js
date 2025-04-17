@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function AdminLogin() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
+  // ✅ Clear login state when login page loads
+  useEffect(() => {
+    localStorage.removeItem('isAdmin');
+  }, []);
+
   const handleLogin = () => {
     const adminPassword = process.env.REACT_APP_ADMIN_PASSWORD;
 
     if (password === adminPassword) {
       localStorage.setItem('isAdmin', 'true');
-      navigate('/'); // Redirect after login
+      navigate('/admin/dashboard'); // ✅ Redirect to admin dashboard
     } else {
       alert('Incorrect password. Please try again.');
     }
@@ -37,5 +42,6 @@ function AdminLogin() {
 }
 
 export default AdminLogin;
+
 
 
